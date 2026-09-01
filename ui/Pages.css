@@ -5,7 +5,7 @@
    so it never collides with the swapped chatstyle.css /
    call.css stylesheets.
    ========================================================= */
- 
+
 .page-container {
   flex: 1;
   display: flex;
@@ -18,7 +18,7 @@
   backdrop-filter: blur(3px);
   min-height: 0;
 }
- 
+
 /* ===== Main page header + search ===== */
 .main-header {
   background-color: #1e1e1e;
@@ -33,14 +33,14 @@
   flex-shrink: 0;
   margin-bottom: 10px;
 }
- 
+
 .main-header-title {
   color: #fff;
   font-size: 17px;
   font-weight: 700;
   margin-right: auto;
 }
- 
+
 .search-bar {
   background-color: #1c1c1c;
   border-radius: 16px;
@@ -51,12 +51,12 @@
   margin: 0 8px 10px 8px;
   flex-shrink: 0;
 }
- 
+
 .search-bar i {
   color: #777;
   font-size: 14px;
 }
- 
+
 .search-bar input {
   flex: 1;
   min-width: 0;
@@ -64,33 +64,53 @@
   outline: none;
   background: transparent;
   color: #ddd;
-  font-size: 14px;
+  font-size: 16px; /* 16px avoids iOS auto-zoom-on-focus */
   font-family: 'Inter', sans-serif;
 }
- 
+
 .search-bar input::placeholder {
   color: #777;
 }
- 
+
+.search-clear-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #333;
+  color: #aaa;
+  font-size: 10px;
+  cursor: pointer;
+  flex-shrink: 0;
+  border: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.search-clear-btn.visible {
+  display: flex;
+}
+
 /* ===== Contacts list ===== */
 .contacts-scroll-container {
   flex: 1;
   overflow-y: auto;
-  padding: 0 8px;
+  padding: 0 8px 6px;
   min-height: 0;
   -webkit-overflow-scrolling: touch;
 }
- 
+
 .contacts-scroll-container::-webkit-scrollbar {
   width: 3px;
 }
- 
+
 .contacts-scroll-container::-webkit-scrollbar-thumb {
   background-color: #555;
   border-radius: 6px;
   border: 1px solid #2c2c2c;
 }
- 
+
 .contact-item {
   display: flex;
   align-items: center;
@@ -98,14 +118,22 @@
   padding: 10px 8px;
   border-radius: 14px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color 0.15s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
- 
-.contact-item:hover,
+
 .contact-item:active {
   background-color: #1c1c1c;
+  transform: scale(0.98);
 }
- 
+
+@media (hover: hover) {
+  .contact-item:hover {
+    background-color: #1c1c1c;
+  }
+}
+
 .contact-avatar {
   width: 46px;
   height: 46px;
@@ -120,7 +148,7 @@
   position: relative;
   flex-shrink: 0;
 }
- 
+
 .contact-online-status {
   position: absolute;
   bottom: 0px;
@@ -131,19 +159,19 @@
   border-radius: 50%;
   border: 2px solid #121212;
 }
- 
+
 .contact-details {
   flex: 1;
   min-width: 0;
 }
- 
+
 .contact-name {
   color: #fff;
   font-size: 15px;
   font-weight: 600;
   margin-bottom: 2px;
 }
- 
+
 .contact-last-msg {
   color: #999;
   font-size: 12px;
@@ -151,7 +179,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
- 
+
 .contact-meta {
   display: flex;
   flex-direction: column;
@@ -159,12 +187,12 @@
   gap: 4px;
   flex-shrink: 0;
 }
- 
+
 .contact-time {
   color: #777;
   font-size: 11px;
 }
- 
+
 .contact-unread-badge {
   background-color: #4fc3f7;
   color: #05202b;
@@ -178,14 +206,14 @@
   justify-content: center;
   padding: 0 5px;
 }
- 
+
 .contacts-empty {
   text-align: center;
   color: #666;
   font-size: 13px;
   padding: 30px 10px;
 }
- 
+
 /* ===== Bottom nav ===== */
 .bottom-nav {
   display: flex;
@@ -198,35 +226,46 @@
   flex-shrink: 0;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
- 
+
 .nav-item {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 3px;
   color: #777;
   font-size: 10px;
   cursor: pointer;
   padding: 6px 16px;
   border-radius: 14px;
-  transition: background-color 0.2s, color 0.2s;
+  transition: background-color 0.2s, color 0.2s, transform 0.1s;
   border: none;
   background: transparent;
   font-family: 'Inter', sans-serif;
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
- 
+
 .nav-item i {
   font-size: 18px;
 }
- 
-.nav-item:hover {
-  background-color: #2c2c2c;
+
+@media (hover: hover) {
+  .nav-item:hover {
+    background-color: #2c2c2c;
+  }
 }
- 
+
+.nav-item:active {
+  transform: scale(0.94);
+}
+
 .nav-item.active {
   color: #4fc3f7;
+  background-color: rgba(79, 195, 247, 0.12);
 }
- 
+
 /* ===== Profile page ===== */
 .profile-header {
   background-color: #1e1e1e;
@@ -242,13 +281,13 @@
   flex-shrink: 0;
   margin-bottom: 10px;
 }
- 
+
 .profile-header-title {
   color: #fff;
   font-size: 15px;
   font-weight: 600;
 }
- 
+
 .profile-scroll {
   flex: 1;
   overflow-y: auto;
@@ -259,17 +298,17 @@
   flex-direction: column;
   align-items: center;
 }
- 
+
 .profile-scroll::-webkit-scrollbar {
   width: 3px;
 }
- 
+
 .profile-scroll::-webkit-scrollbar-thumb {
   background-color: #555;
   border-radius: 6px;
   border: 1px solid #2c2c2c;
 }
- 
+
 .profile-avatar-large {
   width: 130px;
   height: 130px;
@@ -285,7 +324,7 @@
   margin-bottom: 14px;
   flex-shrink: 0;
 }
- 
+
 .profile-name {
   color: #fff;
   font-size: 20px;
@@ -293,14 +332,14 @@
   margin-bottom: 4px;
   text-align: center;
 }
- 
+
 .profile-status {
   color: #4ade80;
   font-size: 13px;
   margin-bottom: 20px;
   text-align: center;
 }
- 
+
 .profile-actions {
   display: flex;
   gap: 14px;
@@ -308,7 +347,7 @@
   width: 100%;
   justify-content: center;
 }
- 
+
 .profile-action-btn {
   display: flex;
   flex-direction: column;
@@ -320,20 +359,29 @@
   border-radius: 16px;
   cursor: pointer;
   font-size: 11px;
-  transition: background-color 0.2s;
+  transition: background-color 0.15s, transform 0.1s;
   flex: 1;
   max-width: 100px;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
- 
-.profile-action-btn:hover {
+
+@media (hover: hover) {
+  .profile-action-btn:hover {
+    background-color: #2c2c2c;
+  }
+}
+
+.profile-action-btn:active {
   background-color: #2c2c2c;
+  transform: scale(0.95);
 }
- 
+
 .profile-action-btn i {
   font-size: 18px;
   color: #4fc3f7;
 }
- 
+
 .profile-info-section {
   width: 100%;
   background-color: #1e1e1e;
@@ -341,7 +389,7 @@
   padding: 12px 16px;
   margin-bottom: 10px;
 }
- 
+
 .profile-info-label {
   color: #4fc3f7;
   font-size: 11px;
@@ -349,16 +397,144 @@
   letter-spacing: 0.5px;
   margin-bottom: 4px;
 }
- 
+
 .profile-info-value {
   color: #ddd;
   font-size: 14px;
   line-height: 1.4;
 }
- 
+
 /* Chat header avatar/name become tappable entry points into the profile page */
 .chat-header .user-avatar,
 .chat-header .user-name {
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
- 
+
+/* =========================================================
+   Cross-cutting polish for existing shared controls
+   (icon-button, circle-btn, delete-option live in
+   chatstyle.css / call.css; this file loads after them in
+   <head>, so these rules layer on top without editing those
+   files or changing their colors/sizing.)
+   ========================================================= */
+.icon-button,
+.circle-btn,
+.delete-option {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.icon-button:active,
+.circle-btn:active {
+  transform: scale(0.92);
+}
+
+/* Undo sticky :hover on touch devices — without this, tapping an
+   icon button on a phone leaves it visually "stuck" highlighted
+   until the next unrelated tap. */
+@media (hover: none) {
+  .icon-button:hover {
+    background-color: #2c2c2c;
+  }
+  .circle-btn:hover {
+    background-color: #333;
+  }
+  .delete-option:hover {
+    background-color: transparent;
+  }
+}
+
+/* =========================================================
+   Page transitions — swap between Main / Chat / Profile with
+   a soft fade instead of an abrupt display:none cut.
+   ========================================================= */
+.page-fade-in {
+  animation: pageFadeIn 0.22s ease both;
+}
+
+@keyframes pageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =========================================================
+   Top menu dropdown (opened from the "..." button on Main)
+   ========================================================= */
+.top-menu-dropdown {
+  position: absolute;
+  top: 58px;
+  right: 14px;
+  background-color: #1e1e1e;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  padding: 6px;
+  z-index: 30;
+  min-width: 190px;
+  animation: pageFadeIn 0.15s ease both;
+}
+
+.top-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: #eee;
+  font-size: 13px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.top-menu-item i {
+  width: 16px;
+  text-align: center;
+  color: #4fc3f7;
+  font-size: 14px;
+}
+
+@media (hover: hover) {
+  .top-menu-item:hover {
+    background-color: #2c2c2c;
+  }
+}
+
+.top-menu-item:active {
+  background-color: #2c2c2c;
+}
+
+/* =========================================================
+   Toast — replaces jarring native alert() popups
+   ========================================================= */
+.app-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 90px;
+  transform: translateX(-50%) translateY(10px);
+  background-color: #1e1e1e;
+  color: #fff;
+  font-size: 13px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  white-space: nowrap;
+  max-width: 85vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}

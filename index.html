@@ -130,12 +130,24 @@
   <div class="page-container" id="mainPageContainer">
     <div class="main-header">
       <div class="main-header-title">Chats</div>
-      <button class="icon-button" title="New Chat"><i class="fas fa-pen-to-square"></i></button>
-      <button class="icon-button" title="Menu"><i class="fas fa-ellipsis-vertical"></i></button>
+      <button class="icon-button" title="New Chat" onclick="focusSearch()"><i class="fas fa-pen-to-square"></i></button>
+      <button class="icon-button" title="Menu" onclick="toggleTopMenu(event)"><i class="fas fa-ellipsis-vertical"></i></button>
+    </div>
+    <div class="top-menu-dropdown hidden" id="topMenuDropdown">
+      <div class="top-menu-item" onclick="closeTopMenu(); showToast('Settings coming soon')">
+        <i class="fas fa-gear"></i><span>Settings</span>
+      </div>
+      <div class="top-menu-item" onclick="closeTopMenu(); showToast('New group coming soon')">
+        <i class="fas fa-users"></i><span>New Group</span>
+      </div>
+      <div class="top-menu-item" onclick="closeTopMenu(); showToast('Starred messages coming soon')">
+        <i class="fas fa-star"></i><span>Starred Messages</span>
+      </div>
     </div>
     <div class="search-bar">
       <i class="fas fa-search"></i>
       <input type="text" id="contactSearchInput" placeholder="Search" />
+      <button class="search-clear-btn" id="searchClearBtn" title="Clear" onclick="clearSearch()"><i class="fas fa-xmark"></i></button>
     </div>
     <div class="contacts-scroll-container">
       <div class="contacts-list" id="contactsList"></div>

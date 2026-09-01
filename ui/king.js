@@ -115,7 +115,7 @@ const localContainer = document.getElementById("videoPreview");
 
 
     function switchCamera() {
-      alert("Camera switched (dummy)");
+      showToast("Camera switched");
     }
     
 
@@ -184,7 +184,7 @@ const localContainer = document.getElementById("videoPreview");
     }
     
     // Call control functions
-    function startVideoCall() {
+    function startVideoCall(opts) {
       loadStylesheet('ui/call.css');
       document.getElementById('appContainer').classList.add('hidden');
       document.getElementById('callUIContainer').classList.remove('hidden');
@@ -205,17 +205,49 @@ const localContainer = document.getElementById("videoPreview");
       document.getElementById('remotevideoPreview').style.display = 'block';
       document.getElementById('cameraSwitch').style.display = 'block';
       // Add actual call termination logic here
+
+      // Return the URL to the chat with this contact (or the main list)
+      // instead of leaving a stale ?call= link in the address bar.
+      if (typeof activeContact !== 'undefined' && activeContact) {
+        setUrlParam('chat', normalizePhone(activeContact.phone));
+      } else {
+        clearUrlParam();
+      }
     }
 
-    // Initialize with chat styles
-    window.addEventListener('DOMContentLoaded', () => {
+    // Initialize with chat styles, then resolve whatever page the current
+    // URL (?chat=, ?profile=, ?call=) points to. Falls back to the main
+    // contacts list when there's no matching param/contact.
+    //
+    // NOTE: this file is loaded with a mangled script `type` attribute
+    // (Rocket Loader / similar), which means the browser doesn't run it
+    // inline — it gets injected and executed later, often *after*
+    // DOMContentLoaded has already fired. Waiting only on that event
+    // would silently never run. So: check document.readyState and run
+    // immediately if the DOM is already parsed, otherwise wait for it.
+    function initApp() {
       loadStylesheet('ui/chatstyle.css');
       renderContacts();
+      routeFromURL();
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initApp);
+    } else {
+      initApp();
+    }
+
+    // Keep the app in sync with browser Back/Forward navigation between
+    // the deep-linked states (?chat=, ?profile=, ?call=).
+    window.addEventListener('popstate', () => {
+      routeFromURL();
     });
 
 
     // Call control functions
-    function startVideoCall() {
+    // opts.updateUrl (default true) — set false when routeFromURL() is the
+    // one driving this call, so we don't push a duplicate history entry.
+    function startVideoCall(opts) {
+      opts = opts || {};
       loadStylesheet('ui/call.css');
       document.getElementById('appContainer').classList.add('hidden');
       document.getElementById('callUIContainer').classList.remove('hidden');
@@ -232,9 +264,14 @@ const localContainer = document.getElementById("videoPreview");
       
       // Initialize video stream
       initVideoStream();
+
+      if (opts.updateUrl !== false && typeof activeContact !== 'undefined' && activeContact) {
+        setUrlParam('call', normalizePhone(activeContact.phone), 'video');
+      }
     }
 
-    function startVoiceCall() {
+    function startVoiceCall(opts) {
+      opts = opts || {};
       loadStylesheet('ui/call.css');
       document.getElementById('appContainer').classList.add('hidden');
       document.getElementById('callUIContainer').classList.remove('hidden');
@@ -251,6 +288,10 @@ const localContainer = document.getElementById("videoPreview");
       
       // Initialize audio only
       initAudioStream();
+
+      if (opts.updateUrl !== false && typeof activeContact !== 'undefined' && activeContact) {
+        setUrlParam('call', normalizePhone(activeContact.phone), 'voice');
+      }
     }
 
     function toggleVideo(btn) {
@@ -842,33 +883,144 @@ function deleteMessages(forEveryone) {
 
 
 
- 
- 
+
+
 // =========================================================
 // Main page (contacts + search + bottom nav) + Profile page
 // =========================================================
- 
+
 const contactsData = [
   { id: 1, name: "Sarah Johnson", status: "Online", about: "Living life one day at a time.", phone: "+1 415 555 0182", lastMsg: "You can send me images, videos, or PDF files", time: "10:31 AM", unread: 0, online: true },
   { id: 2, name: "Michael Chen", status: "Last seen today at 9:42 AM", about: "Busy building something new.", phone: "+1 628 555 0093", lastMsg: "Sent a video", time: "Yesterday", unread: 2, online: false },
   { id: 3, name: "Priya Patel", status: "Online", about: "Available", phone: "+1 510 555 0021", lastMsg: "Sounds good, see you then!", time: "Yesterday", unread: 0, online: true },
   { id: 4, name: "David Kim", status: "Last seen 2 hours ago", about: "Working remotely.", phone: "+1 212 555 0147", lastMsg: "Thanks for the document", time: "Mon", unread: 0, online: false }
 ];
- 
+
 let activeContact = contactsData[0];
 let previousView = 'main';
- 
+const PAGE_IDS = ['mainPageContainer', 'appContainer', 'profilePageContainer'];
+
+// =========================================================
+// URL routing — ?chat=NUMBER / ?profile=NUMBER / ?call=NUMBER
+// Deep-links a contact straight into the chat, profile, or
+// call screen, e.g. ?call=19876656326. Phone numbers are
+// compared with punctuation/spaces stripped so "+1 415 555
+// 0182" and "14155550182" both match.
+// =========================================================
+
+function normalizePhone(phone) {
+  return (phone || '').replace(/\D/g, '');
+}
+
+function findContactByPhone(number) {
+  const target = normalizePhone(number);
+  if (!target) return null;
+  return contactsData.find(c => normalizePhone(c.phone) === target)
+      || contactsData.find(c => normalizePhone(c.phone).endsWith(target) || target.endsWith(normalizePhone(c.phone)))
+      || null;
+}
+
+// Writes a single ?key=phone (plus optional &type=) param and drops any
+// other page params, so the address bar always reflects exactly one
+// open screen. push=true adds a new history entry (so Back works);
+// push=false (used while resolving an incoming URL) replaces in place.
+function setUrlParam(key, phone, callType, push) {
+  if (push === undefined) push = true;
+  const url = new URL(window.location.href);
+  url.search = '';
+  if (phone) {
+    url.searchParams.set(key, phone);
+    if (key === 'call' && callType) url.searchParams.set('type', callType);
+  }
+  history[push ? 'pushState' : 'replaceState']({ page: key, phone: phone || null }, '', url);
+}
+
+function clearUrlParam(push) {
+  if (push === undefined) push = true;
+  const url = new URL(window.location.href);
+  url.search = '';
+  history[push ? 'pushState' : 'replaceState']({ page: null }, '', url);
+}
+
+// Reads ?chat=/?profile=/?call= from the current URL and opens the
+// matching screen. Used on first load and on Back/Forward navigation,
+// so it never itself pushes a new history entry (updateUrl:false).
+function routeFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  const callPhone = params.get('call');
+  const profilePhone = params.get('profile');
+  const chatPhone = params.get('chat');
+
+  if (callPhone) {
+    const contact = findContactByPhone(callPhone);
+    if (contact) {
+      activeContact = contact;
+      const nameEl = document.querySelector('#appContainer .user-name');
+      if (nameEl) nameEl.textContent = contact.name;
+      if (params.get('type') === 'video') {
+        startVideoCall({ updateUrl: false });
+      } else {
+        startVoiceCall({ updateUrl: false });
+      }
+      return;
+    }
+    showToast('Contact not found');
+  }
+
+  if (profilePhone) {
+    const contact = findContactByPhone(profilePhone);
+    if (contact) {
+      activeContact = contact;
+      previousView = 'main';
+      openProfile({ updateUrl: false });
+      return;
+    }
+    showToast('Contact not found');
+  }
+
+  if (chatPhone) {
+    const contact = findContactByPhone(chatPhone);
+    if (contact) {
+      openChat(contact.id, { updateUrl: false });
+      return;
+    }
+    showToast('Contact not found');
+  }
+
+  showPage('mainPageContainer');
+}
+
+// Central page switcher — hides the other two pages and fades the
+// requested one in, instead of every caller repeating the same
+// three classList calls (that duplication is what caused the
+// inconsistent/abrupt cuts before).
+function showPage(id) {
+  PAGE_IDS.forEach(pid => {
+    const el = document.getElementById(pid);
+    if (!el) return;
+    if (pid === id) {
+      el.classList.remove('hidden');
+      el.classList.remove('page-fade-in');
+      // restart the animation even if it's already applied
+      void el.offsetWidth;
+      el.classList.add('page-fade-in');
+    } else {
+      el.classList.add('hidden');
+    }
+  });
+}
+
 function renderContacts(filter) {
   const list = document.getElementById('contactsList');
   if (!list) return;
   const q = (filter || '').trim().toLowerCase();
   const filtered = contactsData.filter(c => c.name.toLowerCase().includes(q));
- 
+
   if (filtered.length === 0) {
     list.innerHTML = '<div class="contacts-empty">No contacts found</div>';
     return;
   }
- 
+
   list.innerHTML = filtered.map(contact => `
     <div class="contact-item" onclick="openChat(${contact.id})">
       <div class="contact-avatar">
@@ -886,73 +1038,139 @@ function renderContacts(filter) {
     </div>
   `).join('');
 }
- 
+
 // Live search as the user types in the top search bar
 document.addEventListener('input', (e) => {
   if (e.target && e.target.id === 'contactSearchInput') {
     renderContacts(e.target.value);
+    const clearBtn = document.getElementById('searchClearBtn');
+    if (clearBtn) clearBtn.classList.toggle('visible', e.target.value.length > 0);
   }
 });
- 
-function openChat(id) {
+
+function clearSearch() {
+  const input = document.getElementById('contactSearchInput');
+  if (!input) return;
+  input.value = '';
+  renderContacts('');
+  document.getElementById('searchClearBtn').classList.remove('visible');
+  input.focus();
+}
+
+function focusSearch() {
+  const input = document.getElementById('contactSearchInput');
+  if (input) input.focus();
+}
+
+function openChat(id, opts) {
+  opts = opts || {};
   const contact = contactsData.find(c => c.id === id);
   if (!contact) return;
   activeContact = contact;
- 
+
   const nameEl = document.querySelector('#appContainer .user-name');
   if (nameEl) nameEl.textContent = contact.name;
- 
-  document.getElementById('mainPageContainer').classList.add('hidden');
-  document.getElementById('profilePageContainer').classList.add('hidden');
-  document.getElementById('appContainer').classList.remove('hidden');
+
+  showPage('appContainer');
+
+  if (opts.updateUrl !== false) {
+    setUrlParam('chat', normalizePhone(contact.phone));
+  }
 }
- 
+
 function closeChat() {
-  document.getElementById('appContainer').classList.add('hidden');
-  document.getElementById('mainPageContainer').classList.remove('hidden');
+  showPage('mainPageContainer');
+  clearUrlParam();
 }
- 
-function openProfile() {
+
+function openProfile(opts) {
+  opts = opts || {};
   const contact = activeContact;
   if (!contact) return;
- 
+
   // Remember whether Profile was opened from the chat screen or the main
   // list, so the back button returns to the right place.
   previousView = document.getElementById('appContainer').classList.contains('hidden') ? 'main' : 'chat';
- 
+
   document.getElementById('profileName').textContent = contact.name;
   document.getElementById('profileStatus').textContent = contact.status;
   document.getElementById('profileAbout').textContent = contact.about;
   document.getElementById('profilePhone').textContent = contact.phone;
- 
-  document.getElementById('mainPageContainer').classList.add('hidden');
-  document.getElementById('appContainer').classList.add('hidden');
-  document.getElementById('profilePageContainer').classList.remove('hidden');
-}
- 
-function closeProfile() {
-  document.getElementById('profilePageContainer').classList.add('hidden');
-  if (previousView === 'chat') {
-    document.getElementById('appContainer').classList.remove('hidden');
-  } else {
-    document.getElementById('mainPageContainer').classList.remove('hidden');
+
+  showPage('profilePageContainer');
+
+  if (opts.updateUrl !== false) {
+    setUrlParam('profile', normalizePhone(contact.phone));
   }
 }
- 
-function openChatFromProfile() {
-  document.getElementById('profilePageContainer').classList.add('hidden');
-  document.getElementById('appContainer').classList.remove('hidden');
+
+function closeProfile() {
+  showPage(previousView === 'chat' ? 'appContainer' : 'mainPageContainer');
+  if (previousView === 'chat' && activeContact) {
+    setUrlParam('chat', normalizePhone(activeContact.phone));
+  } else {
+    clearUrlParam();
+  }
 }
- 
+
+function openChatFromProfile() {
+  showPage('appContainer');
+  if (activeContact) {
+    setUrlParam('chat', normalizePhone(activeContact.phone));
+  }
+}
+
 function switchPage(page) {
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
   const target = document.querySelector(`.nav-item[data-page="${page}"]`);
   if (target) target.classList.add('active');
- 
+
   // Calls / Settings tabs are placeholders for now; Chats and Contacts
   // both show the same contact list.
-  if (page === 'calls' || page === 'settings') {
-    alert(page === 'calls' ? 'Calls tab coming soon' : 'Settings coming soon');
+  if (page === 'calls') {
+    showToast('Calls tab coming soon');
+  } else if (page === 'settings') {
+    showToast('Settings coming soon');
   }
 }
- 
+
+// ===== Top menu dropdown (the "..." button on Main) =====
+function toggleTopMenu(e) {
+  if (e) e.stopPropagation();
+  document.getElementById('topMenuDropdown').classList.toggle('hidden');
+}
+
+function closeTopMenu() {
+  document.getElementById('topMenuDropdown').classList.add('hidden');
+}
+
+// Close the dropdown when tapping anywhere outside it
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('topMenuDropdown');
+  if (!menu || menu.classList.contains('hidden')) return;
+  if (!menu.contains(e.target) && !e.target.closest('[title="Menu"]')) {
+    closeTopMenu();
+  }
+});
+
+// ===== Themed toast (replaces native alert() popups) =====
+let toastTimer = null;
+function showToast(message) {
+  let toast = document.getElementById('appToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'appToast';
+    toast.className = 'app-toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  // restart the transition even if a toast is already showing
+  toast.classList.remove('show');
+  void toast.offsetWidth;
+  toast.classList.add('show');
+
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toast.classList.remove('show');
+  }, 2200);
+}

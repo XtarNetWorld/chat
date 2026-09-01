@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
+  <title>Chat App</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <!-- Base styles that apply to both interfaces -->
+  <style>
+    /* Common styles for both interfaces */
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+      height: 100%;
+      height: 100dvh;
+    }
+    
+    #network {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+    }
+    
+    .hidden {
+      display: none !important;
+    }
+  </style>
+  <!-- Dynamic CSS links will be added here by JavaScript -->
+</head>
+<body>
+  <!-- Floating Network Background -->
+  <canvas id="network"></canvas>
+
+  <!-- Call UI (initially hidden) -->
+  <div class="call-ui-container hidden" id="callUIContainer">
+    <div class="backcanvapro"></div>
+    
+    <!-- Top Controls -->
+    <div class="top-call-container" id="topControl">
+      <div class="top-bar">
+        <div class="circle-btn" onclick="if (!window.__cfRLUnblockHandlers) return false; addUser()" data-cf-modified-3fc8ec0bacb6b13b5834c177-="">
+          <i class="fas fa-user-plus"></i>
+        </div>
+
+        <div class="center-info">
+          <div class="call-timer" id="callTimer">00:00</div>
+          <div class="network-status">
+            <i class="fas fa-wifi"></i> Excellent
+          </div>
+        </div>
+
+        <div class="circle-btn" onclick="if (!window.__cfRLUnblockHandlers) return false; navigateNext()" data-cf-modified-3fc8ec0bacb6b13b5834c177-="">
+          <i class="fas fa-arrow-right"></i>
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </div>
+
+    <div class="user-avatar">
+      <i class="fas fa-user"></i>
+    </div>
+
+    <div class="camera-switch" id="cameraSwitch" onclick="if (!window.__cfRLUnblockHandlers) return false; switchCamera()" data-cf-modified-3fc8ec0bacb6b13b5834c177-="">
+      <i class="fas fa-camera-rotate"></i>
+    </div>
+
+    <div class="video-preview" id="videoPreview"></div>
+    <div class="remote-video-preview" id="remotevideoPreview"></div>
+
+    <div class="bottom-control" id="bottomControl">
+      <button onclick="if (!window.__cfRLUnblockHandlers) return false; toggleMic(this)" data-cf-modified-3fc8ec0bacb6b13b5834c177-=""><i class="fas fa-microphone"></i></button>
+      <button onclick="if (!window.__cfRLUnblockHandlers) return false; toggleVideo(this)" data-cf-modified-3fc8ec0bacb6b13b5834c177-=""><i class="fas fa-video"></i></button>
+      <button onclick="if (!window.__cfRLUnblockHandlers) return false; toggleSpeaker(this)" data-cf-modified-3fc8ec0bacb6b13b5834c177-=""><i class="fas fa-volume-up"></i></button>
+      <button class="end" onclick="if (!window.__cfRLUnblockHandlers) return false; endCall()" data-cf-modified-3fc8ec0bacb6b13b5834c177-=""><i class="fas fa-phone"></i></button>
+    </div>
+  </div>
+
+<div class="modal" id="fileModal">
+    <span class="close-modal">&times;</span>
+    <div class="modal-content" id="modalContent"></div>
+    <div class="modal-title" id="modalTitle"></div>
+  </div>
+
+
+  <!-- Delete message menu -->
+  <div class="delete-menu" id="deleteMenu">
+    <div class="delete-option delete-for-me" id="deleteForMe">
+      <i class="fas fa-user"></i>
+      <span>Delete for me</span>
+    </div>
+    <div class="delete-option delete-for-everyone" id="deleteForEveryone">
+      <i class="fas fa-users"></i>
+      <span>Delete for everyone</span>
+    </div>
+  </div>
+  
+
+  <!-- Main Chat Container -->
+  <div class="app-container" id="appContainer">
+    <!-- Floating Navigation Header -->
+    <div class="chat-header">
+      <div class="user-avatar"><i class="fas fa-user"></i></div>
+      <div class="user-name">User Name</div>
+      <button class="icon-button" title="Video Call" onclick="if (!window.__cfRLUnblockHandlers) return false; startVideoCall()" data-cf-modified-3fc8ec0bacb6b13b5834c177-=""><i class="fas fa-video"></i></button>
+      <button class="icon-button" title="Voice Call" onclick="if (!window.__cfRLUnblockHandlers) return false; startVoiceCall()" data-cf-modified-3fc8ec0bacb6b13b5834c177-=""><i class="fas fa-phone"></i></button>
+      <button class="icon-button" title="Back"><i class="fas fa-arrow-right"></i></button>
+    </div>
+
+    <!-- Chat Scroll Container -->
+    <div class="chat-scroll-container">
+      <div class="chat-area" id="chatArea">
+        <!-- Example messages -->
+        <div class="message received">
+          Hi! How can I help you today?
+          <div class="message-time">10:30 AM</div>
+        </div>
+        <div class="message received">
+          You can send me images, videos, or PDF files
+          <div class="message-time">10:31 AM</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat Input -->
+    <div class="chat-input-wrapper">
+      <div class="file-preview" id="filePreviewContainer"></div>
+      <textarea placeholder="Ask anything" rows="1" id="chatInput"></textarea>
+
+      <div class="button-row">
+        <div class="left-buttons">
+          <button class="icon-btn" title="Attach" id="fileInputTrigger">
+            <i class="fa-solid fa-paperclip"></i>
+          </button>
+          <input type="file" id="fileInput" hidden multiple accept="doc/*,docx/*,xlx/*,xlsx/*,ppt/*,pptx/*,txt/*,zip/*,rar/*,mp3/*,mp4/*,wav/*,default/*,image/*,video/*,.pdf" />
+          <button class="think-btn"><i class="fa-regular fa-lightbulb"></i> Think</button>
+        </div>
+        <button class="send-btn" title="Send" id="sendBtn">
+          <i class="fa-solid fa-paper-plane"></i>
+        </button>                                                                                     
+      </div>
+    </div>
+  </div>
+
+
+
+  
+
+  <script src="ui/king.js" type="3fc8ec0bacb6b13b5834c177-text/javascript"></script>
+  <script src="ui/background.js" type="3fc8ec0bacb6b13b5834c177-text/javascript"></script>
+<script type="3fc8ec0bacb6b13b5834c177-text/javascript">
+  // javascript.js
+document.addEventListener("click", () => {
+    let elem = document.documentElement; // Full page
+
+    if (!document.fullscreenElement &&
+        !document.webkitFullscreenElement &&
+        !document.msFullscreenElement) {
+        
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen();
+        } else if (elem.webkitRequestFullscreen) { // Safari
+            elem.webkitRequestFullscreen();
+        } else if (elem.msRequestFullscreen) { // IE/Edge
+            elem.msRequestFullscreen();
+        }
+    }
+});
+
+</script>
+<script src="https://cdnjs.cloudflare.com/cdn-cgi/scripts/7d0fa10a/cloudflare-static/rocket-loader.min.js" data-cf-settings="3fc8ec0bacb6b13b5834c177-|49" defer></script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v3d52b47920f24c319d37e2661827c42b1787588026925" integrity="sha512-d9sL6GJLXn6fInD1+TVXhTcQOsmxeHfmHAvwGDIxp5TO+uo1fiWW7mHomMj4MLRlCsJDTqXzWLHJFFlPCEIj/A==" data-cf-beacon='{"version":"2024.11.0","token":"cf636673efb9413c9152ba0f3b433b9b","r":1}' crossorigin="anonymous"></script>
+</body>
+</html>

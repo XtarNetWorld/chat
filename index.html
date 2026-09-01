@@ -32,7 +32,12 @@
       display: none !important;
     }
   </style>
-  <!-- Dynamic CSS links will be added here by JavaScript -->
+  <!-- Load chat styles immediately (parallel with HTML parsing) instead of waiting for JS -->
+  <link rel="stylesheet" href="ui/chatstyle.css" id="dynamicStylesheet" />
+  <!-- Preload call styles so switching to the call UI later is instant -->
+  <link rel="preload" href="ui/call.css" as="style" />
+  <!-- Main (contacts) + Profile pages: always active, own namespaced classes, never swapped -->
+  <link rel="stylesheet" href="ui/pages.css" />
 </head>
 <body>
   <!-- Floating Network Background -->
@@ -121,15 +126,84 @@
   </div>
   
 
+  <!-- Main Page: search + contacts list + bottom nav -->
+  <div class="page-container" id="mainPageContainer">
+    <div class="main-header">
+      <div class="main-header-title">Chats</div>
+      <button class="icon-button" title="New Chat"><i class="fas fa-pen-to-square"></i></button>
+      <button class="icon-button" title="Menu"><i class="fas fa-ellipsis-vertical"></i></button>
+    </div>
+    <div class="search-bar">
+      <i class="fas fa-search"></i>
+      <input type="text" id="contactSearchInput" placeholder="Search" />
+    </div>
+    <div class="contacts-scroll-container">
+      <div class="contacts-list" id="contactsList"></div>
+    </div>
+    <div class="bottom-nav" id="bottomNav">
+      <button class="nav-item active" data-page="chats" onclick="switchPage('chats')">
+        <i class="fas fa-comment"></i>
+        <span>Chats</span>
+      </button>
+      <button class="nav-item" data-page="contacts" onclick="switchPage('contacts')">
+        <i class="fas fa-address-book"></i>
+        <span>Contacts</span>
+      </button>
+      <button class="nav-item" data-page="calls" onclick="switchPage('calls')">
+        <i class="fas fa-phone"></i>
+        <span>Calls</span>
+      </button>
+      <button class="nav-item" data-page="settings" onclick="switchPage('settings')">
+        <i class="fas fa-gear"></i>
+        <span>Settings</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Profile Page -->
+  <div class="page-container hidden" id="profilePageContainer">
+    <div class="profile-header">
+      <button class="icon-button" title="Back" onclick="closeProfile()"><i class="fas fa-arrow-left"></i></button>
+      <div class="profile-header-title">Contact Info</div>
+    </div>
+    <div class="profile-scroll">
+      <div class="profile-avatar-large"><i class="fas fa-user"></i></div>
+      <div class="profile-name" id="profileName">User Name</div>
+      <div class="profile-status" id="profileStatus">Online</div>
+      <div class="profile-actions">
+        <div class="profile-action-btn" onclick="startVoiceCall()">
+          <i class="fas fa-phone"></i>
+          <span>Call</span>
+        </div>
+        <div class="profile-action-btn" onclick="startVideoCall()">
+          <i class="fas fa-video"></i>
+          <span>Video</span>
+        </div>
+        <div class="profile-action-btn" onclick="openChatFromProfile()">
+          <i class="fas fa-comment"></i>
+          <span>Message</span>
+        </div>
+      </div>
+      <div class="profile-info-section">
+        <div class="profile-info-label">About</div>
+        <div class="profile-info-value" id="profileAbout">Hey there! I'm using this chat app.</div>
+      </div>
+      <div class="profile-info-section">
+        <div class="profile-info-label">Phone</div>
+        <div class="profile-info-value" id="profilePhone">+1 234 567 8900</div>
+      </div>
+    </div>
+  </div>
+
   <!-- Main Chat Container -->
-  <div class="app-container" id="appContainer">
+  <div class="app-container hidden" id="appContainer">
     <!-- Floating Navigation Header -->
     <div class="chat-header">
-      <div class="user-avatar"><i class="fas fa-user"></i></div>
-      <div class="user-name">User Name</div>
+      <div class="user-avatar" onclick="openProfile()"><i class="fas fa-user"></i></div>
+      <div class="user-name" onclick="openProfile()">User Name</div>
       <button class="icon-button" title="Video Call" onclick="if (!window.__cfRLUnblockHandlers) return false; startVideoCall()" data-cf-modified-3fc8ec0bacb6b13b5834c177-=""><i class="fas fa-video"></i></button>
       <button class="icon-button" title="Voice Call" onclick="if (!window.__cfRLUnblockHandlers) return false; startVoiceCall()" data-cf-modified-3fc8ec0bacb6b13b5834c177-=""><i class="fas fa-phone"></i></button>
-      <button class="icon-button" title="Back"><i class="fas fa-arrow-right"></i></button>
+      <button class="icon-button" title="Back" onclick="closeChat()"><i class="fas fa-arrow-right"></i></button>
     </div>
 
     <!-- Chat Scroll Container -->

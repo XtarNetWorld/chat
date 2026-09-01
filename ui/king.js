@@ -163,20 +163,24 @@ const localContainer = document.getElementById("videoPreview");
 
 
        // CSS management
-    let currentStylesheet = null;
-    
+    // Reuse the single <link id="dynamicStylesheet"> already in <head>
+    // (loaded there directly in the HTML) instead of destroying and
+    // recreating a <link> element on every call — that swap-in-place
+    // avoids the extra request round trip and the flash it caused.
     function loadStylesheet(url) {
-      // Remove previous stylesheet if exists
-      if (currentStylesheet) {
-        document.head.removeChild(currentStylesheet);
+      const link = document.getElementById('dynamicStylesheet');
+      if (link) {
+        if (link.getAttribute('href') !== url) {
+          link.setAttribute('href', url);
+        }
+      } else {
+        // Fallback, shouldn't normally run since index.html already has the link tag
+        const newLink = document.createElement('link');
+        newLink.rel = 'stylesheet';
+        newLink.href = url;
+        newLink.id = 'dynamicStylesheet';
+        document.head.appendChild(newLink);
       }
-      
-      // Create new link element
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = url;
-      document.head.appendChild(link);
-      currentStylesheet = link;
     }
     
     // Call control functions
@@ -194,7 +198,6 @@ const localContainer = document.getElementById("videoPreview");
 
     function endCall() {
       loadStylesheet('ui/chatstyle.css');
-      loadStylesheet('ui/chatstyle.css');
       document.getElementById('appContainer').classList.remove('hidden');
       document.getElementById('callUIContainer').classList.add('hidden');
       // Reset video elements for next call
@@ -207,6 +210,7 @@ const localContainer = document.getElementById("videoPreview");
     // Initialize with chat styles
     window.addEventListener('DOMContentLoaded', () => {
       loadStylesheet('ui/chatstyle.css');
+      renderContacts();
     });
 
 
@@ -838,3 +842,117 @@ function deleteMessages(forEveryone) {
 
 
 
+ 
+ 
+// =========================================================
+// Main page (contacts + search + bottom nav) + Profile page
+// =========================================================
+ 
+const contactsData = [
+  { id: 1, name: "Sarah Johnson", status: "Online", about: "Living life one day at a time.", phone: "+1 415 555 0182", lastMsg: "You can send me images, videos, or PDF files", time: "10:31 AM", unread: 0, online: true },
+  { id: 2, name: "Michael Chen", status: "Last seen today at 9:42 AM", about: "Busy building something new.", phone: "+1 628 555 0093", lastMsg: "Sent a video", time: "Yesterday", unread: 2, online: false },
+  { id: 3, name: "Priya Patel", status: "Online", about: "Available", phone: "+1 510 555 0021", lastMsg: "Sounds good, see you then!", time: "Yesterday", unread: 0, online: true },
+  { id: 4, name: "David Kim", status: "Last seen 2 hours ago", about: "Working remotely.", phone: "+1 212 555 0147", lastMsg: "Thanks for the document", time: "Mon", unread: 0, online: false }
+];
+ 
+let activeContact = contactsData[0];
+let previousView = 'main';
+ 
+function renderContacts(filter) {
+  const list = document.getElementById('contactsList');
+  if (!list) return;
+  const q = (filter || '').trim().toLowerCase();
+  const filtered = contactsData.filter(c => c.name.toLowerCase().includes(q));
+ 
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="contacts-empty">No contacts found</div>';
+    return;
+  }
+ 
+  list.innerHTML = filtered.map(contact => `
+    <div class="contact-item" onclick="openChat(${contact.id})">
+      <div class="contact-avatar">
+        <i class="fas fa-user"></i>
+        ${contact.online ? '<div class="contact-online-status"></div>' : ''}
+      </div>
+      <div class="contact-details">
+        <div class="contact-name">${contact.name}</div>
+        <div class="contact-last-msg">${contact.lastMsg}</div>
+      </div>
+      <div class="contact-meta">
+        <div class="contact-time">${contact.time}</div>
+        ${contact.unread > 0 ? `<div class="contact-unread-badge">${contact.unread}</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+ 
+// Live search as the user types in the top search bar
+document.addEventListener('input', (e) => {
+  if (e.target && e.target.id === 'contactSearchInput') {
+    renderContacts(e.target.value);
+  }
+});
+ 
+function openChat(id) {
+  const contact = contactsData.find(c => c.id === id);
+  if (!contact) return;
+  activeContact = contact;
+ 
+  const nameEl = document.querySelector('#appContainer .user-name');
+  if (nameEl) nameEl.textContent = contact.name;
+ 
+  document.getElementById('mainPageContainer').classList.add('hidden');
+  document.getElementById('profilePageContainer').classList.add('hidden');
+  document.getElementById('appContainer').classList.remove('hidden');
+}
+ 
+function closeChat() {
+  document.getElementById('appContainer').classList.add('hidden');
+  document.getElementById('mainPageContainer').classList.remove('hidden');
+}
+ 
+function openProfile() {
+  const contact = activeContact;
+  if (!contact) return;
+ 
+  // Remember whether Profile was opened from the chat screen or the main
+  // list, so the back button returns to the right place.
+  previousView = document.getElementById('appContainer').classList.contains('hidden') ? 'main' : 'chat';
+ 
+  document.getElementById('profileName').textContent = contact.name;
+  document.getElementById('profileStatus').textContent = contact.status;
+  document.getElementById('profileAbout').textContent = contact.about;
+  document.getElementById('profilePhone').textContent = contact.phone;
+ 
+  document.getElementById('mainPageContainer').classList.add('hidden');
+  document.getElementById('appContainer').classList.add('hidden');
+  document.getElementById('profilePageContainer').classList.remove('hidden');
+}
+ 
+function closeProfile() {
+  document.getElementById('profilePageContainer').classList.add('hidden');
+  if (previousView === 'chat') {
+    document.getElementById('appContainer').classList.remove('hidden');
+  } else {
+    document.getElementById('mainPageContainer').classList.remove('hidden');
+  }
+}
+ 
+function openChatFromProfile() {
+  document.getElementById('profilePageContainer').classList.add('hidden');
+  document.getElementById('appContainer').classList.remove('hidden');
+}
+ 
+function switchPage(page) {
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const target = document.querySelector(`.nav-item[data-page="${page}"]`);
+  if (target) target.classList.add('active');
+ 
+  // Calls / Settings tabs are placeholders for now; Chats and Contacts
+  // both show the same contact list.
+  if (page === 'calls' || page === 'settings') {
+    alert(page === 'calls' ? 'Calls tab coming soon' : 'Settings coming soon');
+  }
+}
+ 

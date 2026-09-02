@@ -650,7 +650,10 @@ function createFilePreview(file) {
         </div>
       `;
       
-      fileMessage.onclick = () => previewFile(file);
+      fileMessage.onclick = () => {
+        if (Date.now() < suppressMessageClickUntil) return;
+        previewFile(file);
+      };
       chatArea.appendChild(fileMessage);
       if (shouldFollow) requestAnimationFrame(() => keepMessageAtBottom(fileMessage, type === "sent"));
     }
@@ -685,6 +688,7 @@ function createFilePreview(file) {
 
 // Message deletion functionality
 let longPressTimer;
+let suppressMessageClickUntil = 0;
 let selectedMessages = new Set(); // Track multiple selected messages
 
 function setupMessageDeletion() {
@@ -693,6 +697,9 @@ function setupMessageDeletion() {
   document.addEventListener('mouseup', cancelLongPress);
   document.addEventListener('touchstart', startLongPress);
   document.addEventListener('touchend', cancelLongPress);
+  document.addEventListener('selectstart', preventMessageBrowserAction);
+  document.addEventListener('dragstart', preventMessageBrowserAction);
+  document.addEventListener('contextmenu', preventMessageBrowserAction);
   
   // Add click handlers for delete options
   document.getElementById('deleteForMe').addEventListener('click', () => deleteMessages(false));
@@ -706,6 +713,10 @@ function setupMessageDeletion() {
   });
 }
 
+function preventMessageBrowserAction(e) {
+  if (e.target.closest('.message')) e.preventDefault();
+}
+
 function startLongPress(e) {
   const messageElement = e.target.closest('.message');
   if (!messageElement) return;
@@ -713,6 +724,7 @@ function startLongPress(e) {
   if (e.target.closest('.file-preview')) return;
   
   longPressTimer = setTimeout(() => {
+    suppressMessageClickUntil = Date.now() + 800;
     toggleMessageSelection(messageElement);
   }, 1000);
 }

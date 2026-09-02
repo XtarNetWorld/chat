@@ -142,6 +142,8 @@
       line-height: 1.4;
       word-wrap: break-word;
       position: relative;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
     .message.sent {
@@ -198,6 +200,8 @@
       width: 100%;
       max-height: 200px;
       object-fit: cover;
+      -webkit-user-drag: none;
+      user-select: none;
     }
 
     .file-info {

@@ -14,20 +14,25 @@ const localContainer = document.getElementById("videoPreview");
   localContainer.appendChild(localVideo);
   remoteContainer.appendChild(remoteVideo);
 
-  // Get local camera stream
-  navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-    .then((stream) => {
-      localVideo.srcObject = stream;
+  let mediaStreamPromise = null;
 
-      // For demo purposes: show same stream as remote
-      remoteVideo.srcObject = stream;
+  function requestCallMedia() {
+    if (!mediaStreamPromise) {
+      mediaStreamPromise = navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        .then((stream) => {
+          localVideo.srcObject = stream;
+          remoteVideo.srcObject = stream;
+          return stream;
+        })
+        .catch((error) => {
+          mediaStreamPromise = null;
+          console.error("Error accessing camera:", error);
+          return null;
+        });
+    }
 
-      // Replace remoteVideo.srcObject = stream; 
-      // with your real remote stream when using WebRTC
-    })
-    .catch((error) => {
-      console.error("Error accessing camera:", error);
-    });
+    return mediaStreamPromise;
+  }
 
 
   let hideTimeout = null;
@@ -79,6 +84,20 @@ const localContainer = document.getElementById("videoPreview");
     hideTimeout = setTimeout(() => {
       toggleControls(false);
     }, 2500);
+  }
+
+  function showCallControls() {
+    toggleControls(true);
+    resetAutoHideTimer();
+
+    // The start-call click bubbles to body, so restore visibility after that event finishes.
+    requestAnimationFrame(() => {
+      const callUI = document.getElementById("callUIContainer");
+      if (callUI && !callUI.classList.contains("hidden")) {
+        toggleControls(true);
+        resetAutoHideTimer();
+      }
+    });
   }
 
   document.body.addEventListener("click", function (e) {
@@ -162,39 +181,18 @@ const localContainer = document.getElementById("videoPreview");
 
 
 
-       // CSS management
-    let currentStylesheet = null;
-    
-    function loadStylesheet(url) {
-      // Remove previous stylesheet if exists
-      if (currentStylesheet) {
-        document.head.removeChild(currentStylesheet);
-      }
-      
-      // Create new link element
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = url;
-      document.head.appendChild(link);
-      currentStylesheet = link;
-    }
-    
-    // Call control functions
-    function startVideoCall() {
-      loadStylesheet('ui/call.css');
-      document.getElementById('appContainer').classList.add('hidden');
-      document.getElementById('callUIContainer').classList.remove('hidden');
-      // Show video elements for video call
-      document.getElementById('videoPreview').style.display = 'block';
-      document.getElementById('remotevideoPreview').style.display = 'block';
-      document.getElementById('cameraSwitch').style.display = 'block';
-      // Add actual video call initialization logic here
+    // CSS management
+    // Both interface stylesheets stay loaded so switching views never flashes unstyled content.
+    let callTransitionId = 0;
+
+    function loadStylesheet() {
+      return Promise.resolve();
     }
 
-
-    function endCall() {
-      loadStylesheet('ui/chatstyle.css');
-      loadStylesheet('ui/chatstyle.css');
+    async function endCall() {
+      const transitionId = ++callTransitionId;
+      await loadStylesheet('ui/chatstyle.css');
+      if (transitionId !== callTransitionId) return;
       document.getElementById('appContainer').classList.remove('hidden');
       document.getElementById('callUIContainer').classList.add('hidden');
       // Reset video elements for next call
@@ -204,15 +202,21 @@ const localContainer = document.getElementById("videoPreview");
       // Add actual call termination logic here
     }
 
-    // Initialize with chat styles
-    window.addEventListener('DOMContentLoaded', () => {
-      loadStylesheet('ui/chatstyle.css');
+    // Initialize with chat styles before exposing the app.
+    window.addEventListener('DOMContentLoaded', async () => {
+      try {
+        await loadStylesheet('ui/chatstyle.css');
+      } catch (error) {
+        console.error(error);
+      }
     });
 
 
     // Call control functions
-    function startVideoCall() {
-      loadStylesheet('ui/call.css');
+    async function startVideoCall() {
+      const transitionId = ++callTransitionId;
+      await loadStylesheet('ui/call.css');
+      if (transitionId !== callTransitionId) return;
       document.getElementById('appContainer').classList.add('hidden');
       document.getElementById('callUIContainer').classList.remove('hidden');
       
@@ -221,17 +225,21 @@ const localContainer = document.getElementById("videoPreview");
       document.getElementById('videoPreview').style.display = 'flex';
       document.getElementById('remotevideoPreview').style.display = 'flex';
       document.getElementById('cameraSwitch').style.display = 'flex';
+      showCallControls();
       
       // Set video button to active state
       const videoBtn = document.querySelector('#bottomControl button:nth-child(2)');
       videoBtn.querySelector('i').className = 'fas fa-video';
       
       // Initialize video stream
+      await requestCallMedia();
       initVideoStream();
     }
 
-    function startVoiceCall() {
-      loadStylesheet('ui/call.css');
+    async function startVoiceCall() {
+      const transitionId = ++callTransitionId;
+      await loadStylesheet('ui/call.css');
+      if (transitionId !== callTransitionId) return;
       document.getElementById('appContainer').classList.add('hidden');
       document.getElementById('callUIContainer').classList.remove('hidden');
       
@@ -240,6 +248,7 @@ const localContainer = document.getElementById("videoPreview");
       document.getElementById('videoPreview').style.display = 'none';
       document.getElementById('remotevideoPreview').style.display = 'none';
       document.getElementById('cameraSwitch').style.display = 'none';
+      showCallControls();
       
       // Set video button to inactive state (with slash icon)
       const videoBtn = document.querySelector('#bottomControl button:nth-child(2)');
@@ -297,6 +306,7 @@ const localContainer = document.getElementById("videoPreview");
     function upgradeToVideoCall() {
       console.log("Upgrading to video call...");
       // Actual WebRTC implementation would go here
+      requestCallMedia();
       startVideoStream();
     }
     
@@ -317,7 +327,43 @@ const localContainer = document.getElementById("videoPreview");
     const fileInputTrigger = document.getElementById("fileInputTrigger");
     const filePreviewContainer = document.getElementById("filePreviewContainer");
     const chatArea = document.getElementById("chatArea");
+    const chatScrollContainer = document.querySelector(".chat-scroll-container");
     const sendBtn = document.getElementById("sendBtn");
+    let userManuallyScrolledUp = false;
+
+    function isChatNearBottom(threshold = 48) {
+      if (!chatScrollContainer) return true;
+      return chatScrollContainer.scrollHeight - chatScrollContainer.scrollTop - chatScrollContainer.clientHeight <= threshold;
+    }
+
+    function scrollChatToBottom(behavior = "auto") {
+      if (!chatScrollContainer) return;
+      chatScrollContainer.scrollTo({
+        top: chatScrollContainer.scrollHeight,
+        behavior
+      });
+    }
+
+    function keepMessageAtBottom(messageElement, forceFollow = false) {
+      if (forceFollow || !userManuallyScrolledUp) scrollChatToBottom();
+      messageElement.querySelectorAll("img, video").forEach((media) => {
+        const refreshScroll = () => requestAnimationFrame(() => {
+          if (forceFollow || !userManuallyScrolledUp) scrollChatToBottom();
+        });
+        if (media.complete || media.readyState >= 2) {
+          refreshScroll();
+        } else {
+          media.addEventListener("load", refreshScroll, {once: true});
+          media.addEventListener("error", refreshScroll, {once: true});
+        }
+      });
+    }
+
+    if (chatScrollContainer) {
+      chatScrollContainer.addEventListener("scroll", () => {
+        userManuallyScrolledUp = !isChatNearBottom();
+      });
+    }
     const fileModal = document.getElementById("fileModal");
     const modalContent = document.getElementById("modalContent");
     const modalTitle = document.getElementById("modalTitle");
@@ -530,7 +576,7 @@ function createFilePreview(file) {
           filePreviewContainer.innerHTML = '';
         }
         
-        chatArea.scrollTop = chatArea.scrollHeight;
+        scrollChatToBottom("smooth");
         
         // Simulate message being read after a delay
         setTimeout(() => {
@@ -548,6 +594,7 @@ function createFilePreview(file) {
     });
 
     function addTextMessage(text, type, messageId) {
+      const shouldFollow = type === "sent" || (!userManuallyScrolledUp && isChatNearBottom());
       const msgBubble = document.createElement("div");
       msgBubble.classList.add("message", type);
       msgBubble.id = `msg-${messageId}`;
@@ -559,9 +606,11 @@ function createFilePreview(file) {
         </div>
       `;
       chatArea.appendChild(msgBubble);
+      if (shouldFollow) requestAnimationFrame(() => keepMessageAtBottom(msgBubble, type === "sent"));
     }
 
     function addFileMessage(file, type, messageId) {
+      const shouldFollow = type === "sent" || (!userManuallyScrolledUp && isChatNearBottom());
       const fileMessage = document.createElement("div");
       fileMessage.classList.add("message", "file-message", type);
       fileMessage.id = `msg-${messageId}`;
@@ -571,7 +620,7 @@ function createFilePreview(file) {
         fileContent = `
           <img src="${URL.createObjectURL(file)}">
           <div class="file-info">
-            <i class="fas fa-image file-icon"></i> ${file.name}
+            <i class="fas fa-image file-icon"></i><span class="file-name">${file.name}</span>
           </div>
         `;
       } 
@@ -579,7 +628,7 @@ function createFilePreview(file) {
         fileContent = `
           <video src="${URL.createObjectURL(file)}" preload="metadata"></video>
           <div class="file-info">
-            <i class="fas fa-video file-icon"></i> ${file.name}
+            <i class="fas fa-video file-icon"></i><span class="file-name">${file.name}</span>
           </div>
         `;
       } 
@@ -603,6 +652,7 @@ function createFilePreview(file) {
       
       fileMessage.onclick = () => previewFile(file);
       chatArea.appendChild(fileMessage);
+      if (shouldFollow) requestAnimationFrame(() => keepMessageAtBottom(fileMessage, type === "sent"));
     }
 
     function getCurrentTime() {
@@ -811,7 +861,6 @@ function deleteMessages(forEveryone) {
               }
             }
           }
-          chatArea.scrollTop = chatArea.scrollHeight;
         }, i * 800);
       });
     }

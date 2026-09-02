@@ -43,9 +43,10 @@
       padding: 6px 14px;
       border-radius: 18px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      margin-top: 4px;
       z-index: 10;
       position: sticky;
-      top: 8px;
+      top: 0;
       flex-shrink: 0;
     }
 
@@ -307,6 +308,7 @@
       flex-wrap: wrap;
       padding: 6px 10px;
       width: 100%;
+      margin-bottom: 4px;
       position: relative;
       flex-shrink: 0;
       /* Stay above the soft keyboard; JS may adjust bottom when needed */

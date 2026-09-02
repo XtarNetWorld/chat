@@ -707,6 +707,7 @@ function createFilePreview(file) {
     // XnChat home, search, and profile navigation
     let platformProfiles = [];
     let activeProfile = null;
+    let profileBackView = "homeView";
 
     function normalizeProfile(profile, index) {
       const number = profile.number || profile.no || profile.phone || profile.id || `profile-${index + 1}`;
@@ -772,20 +773,51 @@ function createFilePreview(file) {
 
     function openProfile(profile, backView = "homeView") {
       activeProfile = profile;
+      profileBackView = backView;
       const card = document.getElementById("profileCard");
       card.innerHTML = `
-        ${profileAvatar(profile)}
-        <h2>${profile.name}</h2>
-        <p>${profile.number}</p>
-        <div class="xn-profile-detail"><strong>Platform number</strong>${profile.number}</div>
-        <button class="xn-contact-card" data-profile-number="${profile.number}"><i class="fas fa-comment"></i><span class="xn-contact-copy"><strong>Open chat</strong><small>Start a conversation</small></span></button>
+        <div class="xn-profile-hero">
+          <span class="xn-profile-kicker">Profile</span>
+          ${profileAvatar(profile)}
+          <h2>${profile.name}</h2>
+          <p>${profile.number}</p>
+        </div>
+        <div class="xn-profile-actions">
+          <button class="xn-profile-action" data-profile-number="${profile.number}"><i class="fas fa-comment"></i><span>Message</span></button>
+          <button class="xn-profile-action" type="button" title="Voice call"><i class="fas fa-phone"></i><span>Call</span></button>
+          <button class="xn-profile-action" type="button" title="Video call"><i class="fas fa-video"></i><span>Video</span></button>
+        </div>
+        <div class="xn-profile-detail"><strong>Platform number</strong><span>${profile.number}</span></div>
+        <div class="xn-profile-detail"><strong>About</strong><span>Available on XnChat</span></div>
       `;
       card.querySelector("[data-profile-number]").addEventListener("click", () => openChatForProfile(profile));
+      const actionButtons = card.querySelectorAll(".xn-profile-action");
+      actionButtons[1].addEventListener("click", () => {
+        openChatForProfile(profile);
+        startVoiceCall();
+      });
+      actionButtons[2].addEventListener("click", () => {
+        openChatForProfile(profile);
+        startVideoCall();
+      });
       setXnView("profileView");
     }
 
     function renderSearchResults() {
       const query = document.getElementById("contactSearch").value.trim().toLowerCase();
+      const resultsTarget = document.getElementById("searchResults");
+      const searchIntro = document.getElementById("searchIntro");
+      const emptySearch = document.getElementById("emptySearch");
+      const hasQuery = Boolean(query);
+
+      resultsTarget.classList.toggle("hidden", !hasQuery);
+      searchIntro.classList.toggle("hidden", hasQuery);
+      emptySearch.classList.add("hidden");
+      if (!hasQuery) {
+        resultsTarget.innerHTML = "";
+        return;
+      }
+
       const results = platformProfiles.filter((profile) => `${profile.name} ${profile.number}`.toLowerCase().includes(query));
       renderContactList(results, "searchResults", "emptySearch");
     }
@@ -816,15 +848,25 @@ function createFilePreview(file) {
         document.getElementById("contactSearch").focus();
       });
     });
+    document.getElementById("searchBackButton").addEventListener("click", () => setXnView("homeView"));
+    document.getElementById("profileBackButton").addEventListener("click", () => {
+      if (profileBackView === "chatView") {
+        document.querySelectorAll(".xn-view").forEach((view) => view.classList.add("hidden"));
+        document.getElementById("appContainer").classList.remove("hidden");
+        document.getElementById("xnGlobalNav").classList.add("hidden");
+        return;
+      }
+      setXnView(profileBackView);
+    });
     document.getElementById("contactSearch").addEventListener("input", renderSearchResults);
     document.querySelectorAll("[data-back]").forEach((button) => {
       button.addEventListener("click", () => setXnView(button.dataset.back || "homeView"));
     });
     document.querySelector(".chat-header .user-name").addEventListener("click", () => {
-      if (activeProfile) openProfile(activeProfile, "homeView");
+      if (activeProfile) openProfile(activeProfile, "chatView");
     });
     document.querySelector(".chat-header .user-avatar").addEventListener("click", () => {
-      if (activeProfile) openProfile(activeProfile, "homeView");
+      if (activeProfile) openProfile(activeProfile, "chatView");
     });
     document.getElementById("chatBackButton").addEventListener("click", () => {
       activeProfile = null;

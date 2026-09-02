@@ -35,10 +35,53 @@
   <!-- Dynamic CSS links will be added here by JavaScript -->
   <link rel="stylesheet" href="ui/call.css" data-call-stylesheet />
   <link rel="stylesheet" href="ui/chatstyle.css" data-app-stylesheet />
+  <link rel="stylesheet" href="ui/navigation.css" />
 </head>
 <body>
   <!-- Floating Network Background -->
   <canvas id="network"></canvas>
+
+  <!-- XnChat navigation views -->
+  <main class="xn-view xn-home-view" id="homeView">
+    <header class="xn-page-header">
+      <div class="xn-brand"><span class="xn-brand-mark">X</span><span>XnChat</span></div>
+      <button class="xn-header-action" id="openSearch" title="Search"><i class="fas fa-search"></i></button>
+    </header>
+    <section class="xn-home-content">
+      <div class="xn-section-heading"><span>Contacts</span><span id="contactCount">0</span></div>
+      <div class="xn-contact-list" id="contactList"></div>
+      <div class="xn-empty-state" id="emptyContacts">
+        <i class="fas fa-address-book"></i>
+        <strong>No contacts yet</strong>
+        <span>Add profiles to numbers.json to see them here.</span>
+      </div>
+    </section>
+  </main>
+
+  <main class="xn-view xn-subpage-view hidden" id="searchView">
+    <header class="xn-page-header"><div class="xn-brand"><span class="xn-brand-mark">X</span><span>XnChat</span></div><div class="xn-page-title">Search contacts</div><button class="xn-header-action" id="openSearchFromSearch" title="Search"><i class="fas fa-search"></i></button></header>
+    <div class="xn-search-box"><i class="fas fa-search"></i><input id="contactSearch" type="search" placeholder="Search name or number" autocomplete="off" /></div>
+    <div class="xn-contact-list" id="searchResults"></div>
+    <div class="xn-empty-state hidden" id="emptySearch"><i class="fas fa-magnifying-glass"></i><strong>No matching contacts</strong><span>Try a name or platform number.</span></div>
+  </main>
+
+  <main class="xn-view xn-subpage-view hidden" id="profileView">
+    <header class="xn-page-header"><div class="xn-brand"><span class="xn-brand-mark">X</span><span>XnChat</span></div><div class="xn-page-title">Profile</div><button class="xn-header-action" id="openSearchFromProfile" title="Search"><i class="fas fa-search"></i></button></header>
+    <section class="xn-profile-card" id="profileCard"></section>
+  </main>
+
+  <main class="xn-view xn-subpage-view hidden" id="callsView"><header class="xn-page-header"><div class="xn-brand"><span class="xn-brand-mark">X</span><span>XnChat</span></div><div class="xn-page-title">Call history</div><button class="xn-header-action" title="Search"><i class="fas fa-search"></i></button></header><section class="xn-detail-list"><div class="xn-detail-card"><i class="fas fa-phone-arrow-up-right"></i><span><strong>Outgoing calls</strong><small>Your outgoing call history appears here.</small></span><b>0</b></div><div class="xn-detail-card"><i class="fas fa-phone-arrow-down-left"></i><span><strong>Incoming calls</strong><small>Your incoming call history appears here.</small></span><b>0</b></div><div class="xn-empty-state"><i class="fas fa-phone-slash"></i><strong>No calls yet</strong><span>Start a call from any contact chat.</span></div></section></main>
+  <main class="xn-view xn-subpage-view hidden" id="connectView"><header class="xn-page-header"><div class="xn-brand"><span class="xn-brand-mark">X</span><span>XnChat</span></div><div class="xn-page-title">Connect apps</div><button class="xn-header-action" title="Search"><i class="fas fa-search"></i></button></header><section class="xn-connect-list"><button class="xn-connect-card"><i class="fab fa-whatsapp"></i><span>WhatsApp<small>Connect securely with QR</small></span><b><i class="fas fa-qrcode"></i></b></button><button class="xn-connect-card"><i class="fab fa-telegram"></i><span>Telegram<small>Connect securely with QR</small></span><b><i class="fas fa-qrcode"></i></b></button><button class="xn-connect-card"><i class="fas fa-envelope"></i><span>Gmail<small>Connect your inbox</small></span><b><i class="fas fa-arrow-right"></i></b></button><p class="xn-page-note">Connected apps will be available across your XnChat contacts.</p></section></main>
+  <main class="xn-view xn-subpage-view hidden" id="statusView"><header class="xn-page-header"><div class="xn-brand"><span class="xn-brand-mark">X</span><span>XnChat</span></div><div class="xn-page-title">Status</div><button class="xn-header-action" title="Search"><i class="fas fa-search"></i></button></header><section class="xn-status-list"><div class="xn-status-card"><span class="xn-status-avatar"><i class="fas fa-plus"></i></span><span><strong>My status</strong><small>Share an update with your contacts</small></span><b><i class="fas fa-camera"></i></b></div><div class="xn-status-heading">Recent updates</div><div class="xn-empty-state"><i class="fas fa-circle-notch"></i><strong>No recent updates</strong><span>Contact status updates will appear here.</span></div></section></main>
+  <main class="xn-view xn-subpage-view hidden" id="settingsView"><header class="xn-page-header"><div class="xn-brand"><span class="xn-brand-mark">X</span><span>XnChat</span></div><div class="xn-page-title">Profile settings</div><button class="xn-header-action" title="Search"><i class="fas fa-search"></i></button></header><section class="xn-settings-list"><button><i class="fas fa-user"></i><span><strong>Edit profile</strong><small>Update your name and photo</small></span><i class="fas fa-chevron-right"></i></button><button><i class="fas fa-lock"></i><span><strong>Privacy</strong><small>Control who can contact you</small></span><i class="fas fa-chevron-right"></i></button><button><i class="fas fa-bell"></i><span><strong>Notifications</strong><small>Manage message and call alerts</small></span><i class="fas fa-chevron-right"></i></button></section></main>
+
+  <nav class="xn-bottom-nav xn-global-nav" id="xnGlobalNav" aria-label="Main navigation">
+    <button class="xn-nav-item active" data-page="homeView"><i class="fas fa-house"></i><span>Home</span></button>
+    <button class="xn-nav-item" data-page="callsView"><i class="fas fa-phone"></i><span>Calls</span></button>
+    <button class="xn-nav-item" data-page="connectView"><i class="fas fa-link"></i><span>Connect</span></button>
+    <button class="xn-nav-item" data-page="statusView"><i class="fas fa-circle-notch"></i><span>Status</span></button>
+    <button class="xn-nav-item" data-page="settingsView"><i class="fas fa-user-gear"></i><span>Profile</span></button>
+  </nav>
 
   <!-- Call UI (initially hidden) -->
   <div class="call-ui-container hidden" id="callUIContainer">
@@ -88,11 +131,11 @@
       <i class="fas fa-user"></i>
     </div>
 
-    <div class="camera-switch" id="cameraSwitch" onclick="if (!window.__cfRLUnblockHandlers) return false; switchCamera()" data-cf-modified-3fc8ec0bacb6b13b5834c177-="">
-      <i class="fas fa-camera-rotate"></i>
+    <div class="video-preview" id="videoPreview">
+      <div class="camera-switch" id="cameraSwitch" onclick="if (!window.__cfRLUnblockHandlers) return false; switchCamera()" data-cf-modified-3fc8ec0bacb6b13b5834c177-="">
+        <i class="fas fa-camera-rotate"></i>
+      </div>
     </div>
-
-    <div class="video-preview" id="videoPreview"></div>
     <div class="remote-video-preview" id="remotevideoPreview"></div>
 
     <div class="bottom-control" id="bottomControl">
@@ -124,14 +167,14 @@
   
 
   <!-- Main Chat Container -->
-  <div class="app-container" id="appContainer">
+  <div class="app-container hidden" id="appContainer">
     <!-- Floating Navigation Header -->
     <div class="chat-header">
       <div class="user-avatar"><i class="fas fa-user"></i></div>
       <div class="user-name">User Name</div>
       <button class="icon-button" title="Video Call" onclick="if (!window.__cfRLUnblockHandlers) return false; startVideoCall()" data-cf-modified-3fc8ec0bacb6b13b5834c177-=""><i class="fas fa-video"></i></button>
       <button class="icon-button" title="Voice Call" onclick="if (!window.__cfRLUnblockHandlers) return false; startVoiceCall()" data-cf-modified-3fc8ec0bacb6b13b5834c177-=""><i class="fas fa-phone"></i></button>
-      <button class="icon-button" title="Back"><i class="fas fa-arrow-right"></i></button>
+      <button class="icon-button" id="chatBackButton" title="Back"><i class="fas fa-arrow-right"></i></button>
     </div>
 
     <!-- Chat Scroll Container -->

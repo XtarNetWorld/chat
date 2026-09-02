@@ -1,0 +1,14 @@
+{
+  "profiles": [
+    {"number": "XN10001", "name": "Aarav Sharma", "profilePic": "https://i.pravatar.cc/160?img=12"},
+    {"number": "XN10002", "name": "Anaya Patel", "profilePic": "https://i.pravatar.cc/160?img=47"},
+    {"number": "XN10003", "name": "Kabir Mehta", "profilePic": "https://i.pravatar.cc/160?img=11"},
+    {"number": "XN10004", "name": "Diya Nair", "profilePic": "https://i.pravatar.cc/160?img=32"},
+    {"number": "XN10005", "name": "Arjun Verma", "profilePic": "https://i.pravatar.cc/160?img=68"},
+    {"number": "XN10006", "name": "Sara Khan", "profilePic": "https://i.pravatar.cc/160?img=44"},
+    {"number": "XN10007", "name": "Ishaan Rao", "profilePic": "https://i.pravatar.cc/160?img=13"},
+    {"number": "XN10008", "name": "Meera Joshi", "profilePic": "https://i.pravatar.cc/160?img=49"},
+    {"number": "XN10009", "name": "Rohan Singh", "profilePic": "https://i.pravatar.cc/160?img=69"},
+    {"number": "XN10010", "name": "Tara Das", "profilePic": "https://i.pravatar.cc/160?img=45"}
+  ]
+}

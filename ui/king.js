@@ -62,8 +62,6 @@ const localContainer = document.getElementById("videoPreview");
       topControl.classList.remove("hide");
       bottomControl.classList.add("show");
       bottomControl.classList.remove("hide");
-      cameraSwitch.classList.add("show");
-      cameraSwitch.classList.remove("hide");
 
       videoPreview.classList.remove("down");
     } else {
@@ -71,8 +69,6 @@ const localContainer = document.getElementById("videoPreview");
       topControl.classList.remove("show");
       bottomControl.classList.add("hide");
       bottomControl.classList.remove("show");
-      cameraSwitch.classList.add("hide");
-      cameraSwitch.classList.remove("show");
 
       videoPreview.classList.add("down");
     }
@@ -599,13 +595,53 @@ function createFilePreview(file) {
       msgBubble.classList.add("message", type);
       msgBubble.id = `msg-${messageId}`;
       msgBubble.innerHTML = `
-        ${text}
+        <div class="message-text"></div>
         <div class="message-time">
           ${getCurrentTime()}
           ${type === 'sent' ? '<span class="double-tick"><i class="fas fa-check-double"></i></span>' : ''}
         </div>
       `;
+      const messageText = msgBubble.querySelector(".message-text");
+      messageText.textContent = text;
       chatArea.appendChild(msgBubble);
+
+      const lineHeight = parseFloat(getComputedStyle(messageText).lineHeight);
+      const maxMessageHeight = lineHeight * 9;
+      const isLongMessage = Number.isFinite(lineHeight) && messageText.scrollHeight > maxMessageHeight + 1;
+      if (isLongMessage) {
+        messageText.textContent = "";
+        const messageTextNode = document.createTextNode("");
+        messageText.appendChild(messageTextNode);
+        const expandButton = document.createElement("button");
+        expandButton.type = "button";
+        expandButton.className = "message-expand";
+        expandButton.textContent = "Read more";
+        messageText.appendChild(expandButton);
+
+        // Find the longest preview that keeps the link on the final visible line.
+        let low = 0;
+        let high = text.length;
+        let best = 0;
+        while (low <= high) {
+          const middle = Math.floor((low + high) / 2);
+          messageTextNode.nodeValue = `${text.slice(0, middle).trimEnd()}... `;
+          if (messageText.scrollHeight <= maxMessageHeight + 1) {
+            best = middle;
+            low = middle + 1;
+          } else {
+            high = middle - 1;
+          }
+        }
+        messageTextNode.nodeValue = `${text.slice(0, best).trimEnd()}... `;
+        msgBubble.classList.add("message-collapsed");
+
+        expandButton.addEventListener("click", (event) => {
+          event.stopPropagation();
+          const expanded = msgBubble.classList.toggle("message-expanded");
+          messageTextNode.nodeValue = expanded ? `${text} ` : `${text.slice(0, best).trimEnd()}... `;
+          expandButton.textContent = expanded ? "Read less" : "Read more";
+        });
+      }
       if (shouldFollow) requestAnimationFrame(() => keepMessageAtBottom(msgBubble, type === "sent"));
     }
 
@@ -667,6 +703,134 @@ function createFilePreview(file) {
       hours = hours ? hours : 12; // the hour '0' should be '12'
       return `${hours}:${minutes} ${ampm}`;
     }
+
+    // XnChat home, search, and profile navigation
+    let platformProfiles = [];
+    let activeProfile = null;
+
+    function normalizeProfile(profile, index) {
+      const number = profile.number || profile.no || profile.phone || profile.id || `profile-${index + 1}`;
+      return {
+        ...profile,
+        number: String(number),
+        name: profile.name || profile.displayName || profile.username || String(number),
+        photo: profile.profilePic || profile.profilePhoto || profile.photo || profile.avatar || ""
+      };
+    }
+
+    function profileAvatar(profile, className = "xn-avatar") {
+      return profile.photo
+        ? `<span class="${className}"><img src="${profile.photo}" alt=""></span>`
+        : `<span class="${className}"><i class="fas fa-user"></i></span>`;
+    }
+
+    function setXnView(viewId) {
+      document.querySelectorAll(".xn-view").forEach((view) => view.classList.add("hidden"));
+      document.getElementById("appContainer").classList.add("hidden");
+      document.getElementById("callUIContainer").classList.add("hidden");
+      document.getElementById("xnGlobalNav").classList.remove("hidden");
+      const view = document.getElementById(viewId);
+      if (view) view.classList.remove("hidden");
+      document.querySelectorAll(".xn-nav-item").forEach((item) => {
+        item.classList.toggle("active", item.dataset.page === viewId);
+      });
+    }
+
+    function renderContactList(profiles, targetId, emptyId) {
+      const target = document.getElementById(targetId);
+      const empty = document.getElementById(emptyId);
+      target.innerHTML = profiles.map((profile) => `
+        <button class="xn-contact-card" data-profile-number="${profile.number}">
+          ${profileAvatar(profile)}
+          <span class="xn-contact-copy"><strong>${profile.name}</strong><small>${profile.number}</small></span>
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      `).join("");
+      empty.classList.toggle("hidden", profiles.length > 0);
+      target.querySelectorAll("[data-profile-number]").forEach((card) => {
+        card.addEventListener("click", () => {
+          const profile = platformProfiles.find((item) => item.number === card.dataset.profileNumber);
+          if (profile) openChatForProfile(profile);
+        });
+      });
+    }
+
+    function openChatForProfile(profile) {
+      activeProfile = profile;
+      const headerName = document.querySelector(".chat-header .user-name");
+      const headerAvatar = document.querySelector(".chat-header .user-avatar");
+      if (headerName) headerName.textContent = profile.name;
+      if (headerAvatar) {
+        headerAvatar.innerHTML = profile.photo
+          ? `<img src="${profile.photo}" alt="">`
+          : '<i class="fas fa-user"></i>';
+      }
+      document.querySelectorAll(".xn-view").forEach((view) => view.classList.add("hidden"));
+      document.getElementById("appContainer").classList.remove("hidden");
+      document.getElementById("xnGlobalNav").classList.add("hidden");
+    }
+
+    function openProfile(profile, backView = "homeView") {
+      activeProfile = profile;
+      const card = document.getElementById("profileCard");
+      card.innerHTML = `
+        ${profileAvatar(profile)}
+        <h2>${profile.name}</h2>
+        <p>${profile.number}</p>
+        <div class="xn-profile-detail"><strong>Platform number</strong>${profile.number}</div>
+        <button class="xn-contact-card" data-profile-number="${profile.number}"><i class="fas fa-comment"></i><span class="xn-contact-copy"><strong>Open chat</strong><small>Start a conversation</small></span></button>
+      `;
+      card.querySelector("[data-profile-number]").addEventListener("click", () => openChatForProfile(profile));
+      setXnView("profileView");
+    }
+
+    function renderSearchResults() {
+      const query = document.getElementById("contactSearch").value.trim().toLowerCase();
+      const results = platformProfiles.filter((profile) => `${profile.name} ${profile.number}`.toLowerCase().includes(query));
+      renderContactList(results, "searchResults", "emptySearch");
+    }
+
+    async function loadPlatformProfiles() {
+      try {
+        const response = await fetch("numbers.json", {cache: "no-store"});
+        const data = await response.json();
+        const records = Array.isArray(data) ? data : (data.profiles || data.numbers || []);
+        platformProfiles = records.map(normalizeProfile);
+      } catch (error) {
+        platformProfiles = [];
+        console.warn("Unable to load numbers.json", error);
+      }
+      document.getElementById("contactCount").textContent = platformProfiles.length;
+      renderContactList(platformProfiles, "contactList", "emptyContacts");
+      renderSearchResults();
+    }
+
+    document.querySelectorAll(".xn-nav-item").forEach((item) => {
+      item.addEventListener("click", () => setXnView(item.dataset.page));
+    });
+    document.querySelectorAll(".xn-header-action").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.getElementById("contactSearch").value = "";
+        renderSearchResults();
+        setXnView("searchView");
+        document.getElementById("contactSearch").focus();
+      });
+    });
+    document.getElementById("contactSearch").addEventListener("input", renderSearchResults);
+    document.querySelectorAll("[data-back]").forEach((button) => {
+      button.addEventListener("click", () => setXnView(button.dataset.back || "homeView"));
+    });
+    document.querySelector(".chat-header .user-name").addEventListener("click", () => {
+      if (activeProfile) openProfile(activeProfile, "homeView");
+    });
+    document.querySelector(".chat-header .user-avatar").addEventListener("click", () => {
+      if (activeProfile) openProfile(activeProfile, "homeView");
+    });
+    document.getElementById("chatBackButton").addEventListener("click", () => {
+      activeProfile = null;
+      setXnView("homeView");
+    });
+    loadPlatformProfiles();
 
     function updateReadReceipts() {
       sentMessages.forEach(msg => {

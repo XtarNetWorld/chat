@@ -146,6 +146,69 @@
       -webkit-user-select: none;
     }
 
+    .message-text {
+      overflow-wrap: anywhere;
+    }
+
+    .message-expand {
+      position: relative;
+      display: inline-block;
+      margin-left: 4px;
+      padding: 0;
+      border: none;
+      background: transparent;
+      color: #53bdeb;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      z-index: 2;
+    }
+
+    .message-collapsed::after {
+      content: "";
+      position: absolute;
+      right: 0;
+      bottom: 27px;
+      left: 0;
+      height: 1.4em;
+      background: linear-gradient(90deg, rgba(42, 42, 42, 0), #2a2a2a 72%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .message.sent.message-collapsed::after {
+      background: linear-gradient(90deg, rgba(249, 249, 255, 0), #f9f9ff 72%);
+    }
+
+    .message-collapsed .message-text {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 9;
+      overflow: hidden;
+    }
+
+    .message-expanded .message-text {
+      display: block;
+      -webkit-line-clamp: unset;
+      overflow: visible;
+    }
+
+    .message-expanded::after {
+      display: none;
+    }
+
+    .message-expanded .message-expand {
+      position: relative;
+      display: inline-block;
+      margin-left: 4px;
+      padding: 0;
+      background: transparent;
+    }
+
+    .message-expand:hover {
+      text-decoration: underline;
+    }
+
     .message.sent {
       background-color: #f9f9ff;
       color: rgb(0, 0, 0);
